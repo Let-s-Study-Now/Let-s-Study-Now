@@ -6,9 +6,9 @@
 
 프로젝트가 조직 레포지토리로 이전되었으며, 각 파트별로 분리되었습니다:
 
-- **프론트엔드**: [https://github.com/Let-s-Study-Now/Let-s-Study-Now_web](레포URL)
-- **백엔드**: [https://github.com/Let-s-Study-Now/Let-s-Study-Now_was](레포URL)
-- **문서**: [https://github.com/Let-s-Study-Now/Let-s-Study-Now_web](레포URL)
+- **프론트엔드**: [Let-s-Study-Now_web](https://github.com/Let-s-Study-Now/Let-s-Study-Now_web)
+- **백엔드**: [Let-s-Study-Now_was](https://github.com/Let-s-Study-Now/Let-s-Study-Now_was)
+- **문서**: [Let-s-Study-Now_doc](https://github.com/Let-s-Study-Now/Let-s-Study-Now_doc)
 
 ## 이전 작업 내역
 
