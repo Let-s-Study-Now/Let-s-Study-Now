@@ -105,8 +105,38 @@ const GroupStudyRoomPage: React.FC = () => {
   // Level Info
   const [levelInfo, setLevelInfo] = useState<LevelInfoDto | null>(null);
 
-  // Participants
-  const [participants, setParticipants] = useState<StudyRoomParticipant[]>([]);
+  // Participants (UI용 더미 데이터)
+  const [participants, setParticipants] = useState<Participant[]>([
+    {
+      id: 1,
+      username: "다영",
+      timerStatus: "STUDYING",
+      statusMessage: "열심히 공부 중입니다! 💪",
+      isCreator: true,
+    },
+    {
+      id: 2,
+      username: user?.username || "사용자",
+      timerStatus: "STUDYING",
+      statusMessage: "오늘도 화이팅!",
+    },
+    {
+      id: 3,
+      username: "민수",
+      timerStatus: "RESTING",
+      statusMessage: "잠시 휴식 중...",
+    },
+    {
+      id: 4,
+      username: "지은",
+      timerStatus: "STUDYING",
+      statusMessage: "알고리즘 문제 풀고 있어요",
+    },
+  ]);
+
+  // 상태 메시지 편집 관련
+  const [isEditingStatusMessage, setIsEditingStatusMessage] = useState(false);
+  const [statusMessageInput, setStatusMessageInput] = useState("");
 
   // Question mode
   const [isQuestionMode, setIsQuestionMode] = useState(false);
@@ -121,6 +151,46 @@ const GroupStudyRoomPage: React.FC = () => {
 
   // Dialogs
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
+
+  // 상태 메시지 저장
+  const handleSaveStatusMessage = () => {
+    if (statusMessageInput.length > 50) {
+      toast({
+        title: "오류",
+        description: "상태 메시지는 50자 이내로 입력해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // 본인 참여자의 상태 메시지 업데이트
+    setParticipants((prev) =>
+      prev.map((p) =>
+        p.username === user?.username
+          ? { ...p, statusMessage: statusMessageInput.trim() || undefined }
+          : p
+      )
+    );
+
+    setIsEditingStatusMessage(false);
+    toast({
+      title: "상태 메시지 업데이트",
+      description: "상태 메시지가 변경되었습니다.",
+    });
+  };
+
+  // 상태 메시지 편집 시작
+  const handleStartEditStatusMessage = () => {
+    const currentUser = participants.find((p) => p.username === user?.username);
+    setStatusMessageInput(currentUser?.statusMessage || "");
+    setIsEditingStatusMessage(true);
+  };
+
+  // 상태 메시지 편집 취소
+  const handleCancelEditStatusMessage = () => {
+    setIsEditingStatusMessage(false);
+    setStatusMessageInput("");
+  };
 
   // 시간 포맷 함수
   const formatRelativeTime = (date: Date) => {
@@ -181,7 +251,8 @@ const GroupStudyRoomPage: React.FC = () => {
         setLoading(false);
         toast({
           title: "입장 시간 초과",
-          description: "방 입장에 시간이 너무 오래 걸립니다. 다시 시도해주세요.",
+          description:
+            "방 입장에 시간이 너무 오래 걸립니다. 다시 시도해주세요.",
           variant: "destructive",
         });
       }
@@ -226,13 +297,13 @@ const GroupStudyRoomPage: React.FC = () => {
           // 500 에러는 이미 참여 중이거나 중복 참여일 수 있으므로 무시하고 계속 진행
           const errorMessage = String(joinError?.message || "");
           const errorStatus = joinError?.status;
-          
+
           console.log("방 참여 요청 결과 (계속 진행):", {
             message: errorMessage,
             status: errorStatus,
-            error: joinError
+            error: joinError,
           });
-          
+
           // 모든 에러에 대해 계속 진행 (이미 참여 중일 수 있음)
           // 방 정보가 성공적으로 로드되었으므로 입장 가능
         }
@@ -525,7 +596,7 @@ const GroupStudyRoomPage: React.FC = () => {
   // 질문으로 스크롤
   const scrollToQuestion = (questionId: string) => {
     setQuestionListOpen(false);
-    
+
     setTimeout(() => {
       const element = document.getElementById(`question-${questionId}`);
       if (element) {
@@ -601,7 +672,9 @@ const GroupStudyRoomPage: React.FC = () => {
       <div className="h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <p className="text-gray-600 mb-4">방 ID가 없습니다.</p>
-          <Button onClick={() => navigate("/group-study")}>그룹 스터디로 돌아가기</Button>
+          <Button onClick={() => navigate("/group-study")}>
+            그룹 스터디로 돌아가기
+          </Button>
         </div>
       </div>
     );
@@ -612,7 +685,9 @@ const GroupStudyRoomPage: React.FC = () => {
       <div className="h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md">
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">오류가 발생했습니다</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">
+            오류가 발생했습니다
+          </h2>
           <p className="text-gray-600 mb-4">{error}</p>
           <div className="space-x-3">
             <Button onClick={() => navigate("/group-study")}>
@@ -759,13 +834,25 @@ const GroupStudyRoomPage: React.FC = () => {
                   </div>
                 )}
                 {/* 질문 개수 표시 - 팝오버 */}
-                {messages.filter(m => m.type === "question" && m.status !== "resolved").length > 0 && (
-                  <Popover open={questionListOpen} onOpenChange={setQuestionListOpen}>
+                {messages.filter(
+                  (m) => m.type === "question" && m.status !== "resolved"
+                ).length > 0 && (
+                  <Popover
+                    open={questionListOpen}
+                    onOpenChange={setQuestionListOpen}
+                  >
                     <PopoverTrigger asChild>
                       <button className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-red-50 to-orange-50 rounded-lg border border-red-200 hover:shadow-md transition-all cursor-pointer">
                         <HelpCircle className="w-4 h-4 text-red-500" />
                         <span className="font-semibold text-red-700">
-                          질문 {messages.filter(m => m.type === "question" && m.status !== "resolved").length}개
+                          질문{" "}
+                          {
+                            messages.filter(
+                              (m) =>
+                                m.type === "question" && m.status !== "resolved"
+                            ).length
+                          }
+                          개
                         </span>
                       </button>
                     </PopoverTrigger>
@@ -777,7 +864,10 @@ const GroupStudyRoomPage: React.FC = () => {
                         </h4>
                         <div className="space-y-2">
                           {messages
-                            .filter(m => m.type === "question" && m.status !== "resolved")
+                            .filter(
+                              (m) =>
+                                m.type === "question" && m.status !== "resolved"
+                            )
                             .map((question) => (
                               <div
                                 key={question.id}
@@ -788,7 +878,9 @@ const GroupStudyRoomPage: React.FC = () => {
                                   <div className="flex items-center gap-2">
                                     <Avatar className="w-6 h-6">
                                       <AvatarFallback className="bg-red-500 text-white text-xs">
-                                        {question.sender?.charAt(0).toUpperCase()}
+                                        {question.sender
+                                          ?.charAt(0)
+                                          .toUpperCase()}
                                       </AvatarFallback>
                                     </Avatar>
                                     <span className="font-medium text-sm">
@@ -796,21 +888,30 @@ const GroupStudyRoomPage: React.FC = () => {
                                     </span>
                                   </div>
                                   <Badge
-                                    variant={question.status === "helping" ? "default" : "destructive"}
+                                    variant={
+                                      question.status === "helping"
+                                        ? "default"
+                                        : "destructive"
+                                    }
                                     className="text-xs"
                                   >
-                                    {question.status === "helping" ? "답변 중" : "도움 필요"}
+                                    {question.status === "helping"
+                                      ? "답변 중"
+                                      : "도움 필요"}
                                   </Badge>
                                 </div>
                                 <p className="text-sm text-gray-800 line-clamp-2 mb-1">
                                   "{question.content}"
                                 </p>
-                                {question.answers && question.answers.length > 0 && (
-                                  <div className="flex items-center gap-1 text-xs text-blue-600">
-                                    <MessageCircle className="w-3 h-3" />
-                                    <span>답변 {question.answers.length}개</span>
-                                  </div>
-                                )}
+                                {question.answers &&
+                                  question.answers.length > 0 && (
+                                    <div className="flex items-center gap-1 text-xs text-blue-600">
+                                      <MessageCircle className="w-3 h-3" />
+                                      <span>
+                                        답변 {question.answers.length}개
+                                      </span>
+                                    </div>
+                                  )}
                                 <span className="text-xs text-gray-500">
                                   {formatRelativeTime(question.timestamp)}
                                 </span>
@@ -847,7 +948,7 @@ const GroupStudyRoomPage: React.FC = () => {
                   </div>
                 ) : message.type === "question" ? (
                   // 질문 메시지
-                  <div 
+                  <div
                     id={`question-${message.id}`}
                     className="bg-gradient-to-r from-red-50 to-orange-50 rounded-lg p-4 border-l-4 border-red-500 space-y-3 transition-all"
                   >
@@ -904,7 +1005,9 @@ const GroupStudyRoomPage: React.FC = () => {
                     <div className="bg-white rounded-lg p-3 shadow-sm">
                       <div className="flex items-start gap-2">
                         <HelpCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                        <p className="text-gray-900 flex-1">{message.content}</p>
+                        <p className="text-gray-900 flex-1">
+                          {message.content}
+                        </p>
                       </div>
                     </div>
 
@@ -921,87 +1024,98 @@ const GroupStudyRoomPage: React.FC = () => {
                     )}
 
                     {/* 채택된 답변 (해결된 경우) */}
-                    {message.status === "resolved" && message.answers && message.answers.some(ans => ans.isAccepted) && (
-                      <div className="pl-7 space-y-2">
-                        <div className="flex items-center gap-2 text-sm font-medium text-green-700">
-                          <CheckCircle className="w-4 h-4" />
-                          <span>채택된 답변</span>
-                        </div>
-                        {message.answers.filter(ans => ans.isAccepted).map((answer) => (
-                          <div
-                            key={answer.id}
-                            className="bg-green-50 rounded-lg p-3 border-2 border-green-300 shadow-sm"
-                          >
-                            <div className="flex items-center gap-2 mb-2">
-                              <Avatar className="w-6 h-6">
-                                <AvatarFallback className="bg-green-500 text-white text-xs">
-                                  {answer.answerer.charAt(0).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="font-medium text-sm">
-                                {answer.answerer}
-                              </span>
-                              <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
-                                채택됨 ✓
-                              </Badge>
-                              <span className="text-xs text-gray-500">
-                                {formatRelativeTime(answer.timestamp)}
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-800 pl-8">
-                              {answer.content}
-                            </p>
+                    {message.status === "resolved" &&
+                      message.answers &&
+                      message.answers.some((ans) => ans.isAccepted) && (
+                        <div className="pl-7 space-y-2">
+                          <div className="flex items-center gap-2 text-sm font-medium text-green-700">
+                            <CheckCircle className="w-4 h-4" />
+                            <span>채택된 답변</span>
                           </div>
-                        ))}
-                      </div>
-                    )}
+                          {message.answers
+                            .filter((ans) => ans.isAccepted)
+                            .map((answer) => (
+                              <div
+                                key={answer.id}
+                                className="bg-green-50 rounded-lg p-3 border-2 border-green-300 shadow-sm"
+                              >
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Avatar className="w-6 h-6">
+                                    <AvatarFallback className="bg-green-500 text-white text-xs">
+                                      {answer.answerer.charAt(0).toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span className="font-medium text-sm">
+                                    {answer.answerer}
+                                  </span>
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs bg-green-100 text-green-700"
+                                  >
+                                    채택됨 ✓
+                                  </Badge>
+                                  <span className="text-xs text-gray-500">
+                                    {formatRelativeTime(answer.timestamp)}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-gray-800 pl-8">
+                                  {answer.content}
+                                </p>
+                              </div>
+                            ))}
+                        </div>
+                      )}
 
                     {/* 답변 목록 (해결되지 않은 경우) */}
-                    {message.status !== "resolved" && message.answers && message.answers.length > 0 && (
-                      <div className="space-y-2 pl-7">
-                        <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                          <MessageCircle className="w-4 h-4" />
-                          <span>답변 {message.answers.length}개</span>
-                        </div>
-                        {message.answers.map((answer) => (
-                          <div
-                            key={answer.id}
-                            className="bg-blue-50 rounded-lg p-3 border border-blue-200"
-                          >
-                            <div className="flex items-start justify-between gap-2 mb-2">
-                              <div className="flex items-center gap-2">
-                                <Avatar className="w-6 h-6">
-                                  <AvatarFallback className="bg-blue-500 text-white text-xs">
-                                    {answer.answerer.charAt(0).toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <span className="font-medium text-sm">
-                                  {answer.answerer}
-                                </span>
-                                <span className="text-xs text-gray-500">
-                                  {formatRelativeTime(answer.timestamp)}
-                                </span>
-                              </div>
-                              {/* 질문 작성자만 채택 버튼 표시 */}
-                              {message.sender === user?.username && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-7 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                  onClick={() => handleAcceptAnswer(message.id, answer.id)}
-                                >
-                                  <CheckCircle className="w-4 h-4 mr-1" />
-                                  채택
-                                </Button>
-                              )}
-                            </div>
-                            <p className="text-sm text-gray-800 pl-8">
-                              {answer.content}
-                            </p>
+                    {message.status !== "resolved" &&
+                      message.answers &&
+                      message.answers.length > 0 && (
+                        <div className="space-y-2 pl-7">
+                          <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                            <MessageCircle className="w-4 h-4" />
+                            <span>답변 {message.answers.length}개</span>
                           </div>
-                        ))}
-                      </div>
-                    )}
+                          {message.answers.map((answer) => (
+                            <div
+                              key={answer.id}
+                              className="bg-blue-50 rounded-lg p-3 border border-blue-200"
+                            >
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <div className="flex items-center gap-2">
+                                  <Avatar className="w-6 h-6">
+                                    <AvatarFallback className="bg-blue-500 text-white text-xs">
+                                      {answer.answerer.charAt(0).toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span className="font-medium text-sm">
+                                    {answer.answerer}
+                                  </span>
+                                  <span className="text-xs text-gray-500">
+                                    {formatRelativeTime(answer.timestamp)}
+                                  </span>
+                                </div>
+                                {/* 질문 작성자만 채택 버튼 표시 */}
+                                {message.sender === user?.username && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                    onClick={() =>
+                                      handleAcceptAnswer(message.id, answer.id)
+                                    }
+                                  >
+                                    <CheckCircle className="w-4 h-4 mr-1" />
+                                    채택
+                                  </Button>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-800 pl-8">
+                                {answer.content}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
 
                     {/* 답변 입력 (해결되지 않은 경우만) */}
                     {message.status !== "resolved" && (
@@ -1153,8 +1267,11 @@ const GroupStudyRoomPage: React.FC = () => {
               ) : (
                 <div className="divide-y">
                   {participants.map((participant) => {
-                    const isCreator = participant.isCreator || participant.id === roomInfo.creatorId;
-                    const isCurrentUser = participant.username === user?.username;
+                    const isCreator =
+                      participant.isCreator ||
+                      participant.id === roomInfo.creatorId;
+                    const isCurrentUser =
+                      participant.username === user?.username;
 
                     return (
                       <div
@@ -1285,7 +1402,9 @@ const GroupStudyRoomPage: React.FC = () => {
                                     size="sm"
                                     className="h-7 px-2"
                                     onClick={handleSaveStatusMessage}
-                                    disabled={statusMessageInput.trim().length === 0}
+                                    disabled={
+                                      statusMessageInput.trim().length === 0
+                                    }
                                   >
                                     <Check className="w-3.5 h-3.5 text-green-600" />
                                   </Button>
