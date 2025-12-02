@@ -15,7 +15,3 @@
 2025년 12월 2일까지의 작업 내역 및 PR은 이 레포지토리에서 확인할 수 있습니다.
 
 ---
-
-**This repository is archived as of December 2, 2024.**
-Please refer to the new organization repositories above for ongoing development.
-```
